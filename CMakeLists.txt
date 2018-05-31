@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.6)
 
 project(KVS_Server_Demo CXX)
 
-set( PROJECT "KVS_Server_Demo" )
+set( PROJECT "server" )
 
 include_directories("${PROJECT_SOURCE_DIR}")
 include_directories("${PROJECT_SOURCE_DIR}/include")
