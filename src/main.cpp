@@ -9,52 +9,41 @@
 #include <errno.h>
 #include <map>
 #include <vector>
+#include "utils.h"
+
 using namespace std;
-
-
-std::vector<std::string> split(std::string str, std::string delim) {
-  std::vector<std::string> items;
-  std::size_t dlm_idx;
-  if(str.npos == (dlm_idx = str.find_first_of(delim))) {
-    items.push_back(str.substr(0, dlm_idx));
-  }
-  while(str.npos != (dlm_idx = str.find_first_of(delim))) {
-    if(str.npos == str.find_first_not_of(delim)) {
-      break;
-    }
-    items.push_back(str.substr(0, dlm_idx));
-    dlm_idx++;
-    str = str.erase(0, dlm_idx);
-    if(str.npos == str.find_first_of(delim) && "" != str) {
-      items.push_back(str);
-      break;
-    }
-  }
-  return items;
-}
 class Command
 {
 private:
 	bool isSet;
-	vector<string> commands{"set", "get", "del"};
-	string currentCommand;
 	vector<string> variable;
+	map<string, string> dataset;
 
-	bool checkCommands(string argument)
+	string execCommand(string data)
 	{
-		for (int i = 0; i < sizeof(commands) / sizeof(char *); i++)
+		string ret = "";
+		if (!this->isSet)
 		{
-			if (commands[i] == argument)
+			ret = "";
+		}
+		else
+		{
+			if (this->variable[0] == "set")
 			{
-				currentCommand = argument;
-				this->isSet = true;
+				dataset[variable[1]] = data;
+				ret = "Store";
+			} else if (this->variable[0] == "get")
+			{
+				ret = dataset[variable[1]];
+			} else if (this->variable[0] == "del")
+			{
+				ret = "";
+			} else {
+				ret = "Error";
 			}
 		}
-		return false;
-	}
-
-	char *execCommand()
-	{
+		this->isSet = false;
+		return ret;
 	}
 
 public:
@@ -63,47 +52,34 @@ public:
 		this->isSet = false;
 	};
 
-	void setArgument(string argument)
+	string setArgument(string input)
 	{
-		if (checkCommands(argument))
+		if (this->isSet)
 		{
-			if (!this->isSet)
-			{
-				this->execCommand();
-			}
-			this->currentCommand = argument;
-			this->isSet = true;
+			return this->execCommand(input);
 		}
-	}
 
-	~Command();
+		this->variable = split(input, " ");
+
+		if (this->variable[0] == "set" && this->variable.size() == 5)
+		{
+			this->isSet = true;
+			return "";
+		}
+		if (this->variable[0] == "get" && this->variable.size() == 2)
+		{
+			this->isSet = true;
+			return this->execCommand("");
+		}
+		return "Error";
+	};
 };
 
-void moveFoward(char *array, int removeIndex)
-{
-	for (int i = removeIndex; i < strlen(array); i++)
-	{
-		array[i] = array[i + 1];
-	}
-}
-
-void removeEnter(char *array)
-{
-	for (int i = 0; i < strlen(array); i++)
-	{
-		if (array[i] == '\n' || array[i] == '\r')
-		{
-			moveFoward(array, i);
-			i--;
-		}
-	}
-}
 
 int main(int argc, char **argv)
 {
 	map<string, string> dataset;
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
-	Command command();
 	if (sock < 0)
 	{
 		/* TODO ソケットが生成されない場合のエラー処理 */
@@ -150,25 +126,27 @@ int main(int argc, char **argv)
 			exit(0);
 		}
 
+		Command command;
 		while (true)
 		{
-			char *buffer = new char[4048];
-			int length = recv(sock_client, buffer, sizeof(buffer), 0);
+			char *buffer = new char[1024];
+			int length = recv(sock_client, buffer, 1024, 0);
 			removeEnter(buffer);
 			string s = string(buffer);
-			vector<string> items = split(s, " ");
-			for(int i = 0; i < items.size(); i++) {
-				cout << items[i] << endl;
-			}
-			cout << buffer << flush;
-			
-			if (strcmp(buffer, "quit") == 0)
+			if (s == "quit")
 			{
 				close(sock_client);
 				break;
 			}
-			delete[] buffer;
-			// send(sock_client, send_buffer, strlen(send_buffer)+1, 0);
+			string res = command.setArgument(s);
+			cout << res << endl;
+			if(res != "") {
+				char send_buffer[res.size()+2];
+				res.copy(send_buffer, res.size());
+				send_buffer[res.size()+1] = '\n';
+				send_buffer[res.size()+2] = '\0';
+				send(sock_client, send_buffer, strlen(send_buffer)+2, 0);
+			}
 		}
 	}
 	return 0;
