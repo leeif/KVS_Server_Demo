@@ -11,6 +11,11 @@
 #include <vector>
 #include "utils.h"
 
+/**
+ * Todo :
+ * 	1. Multi-Thead
+ *  2. Delete, Cas Command
+ */
 using namespace std;
 class Command
 {

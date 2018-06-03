@@ -5,4 +5,6 @@ CMakeScripts
 Makefile
 cmake_install.cmake
 install_manifest.txt
-KVS_Server_Demo
+server
+compile_commands.json
+.vscode/
