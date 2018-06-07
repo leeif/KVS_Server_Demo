@@ -9,6 +9,8 @@
 #include <errno.h>
 #include <map>
 #include <vector>
+#include <pthread.h>
+#include <signal.h>
 #include "utils.h"
 
 /**
@@ -17,12 +19,13 @@
  *  2. Delete, Cas Command
  */
 using namespace std;
+
+map<string, string> dataset;
 class Command
 {
 private:
 	bool isSet;
 	vector<string> variable;
-	map<string, string> dataset;
 
 	string execCommand(string data)
 	{
@@ -37,13 +40,17 @@ private:
 			{
 				dataset[variable[1]] = data;
 				ret = "Store";
-			} else if (this->variable[0] == "get")
+			}
+			else if (this->variable[0] == "get")
 			{
 				ret = dataset[variable[1]];
-			} else if (this->variable[0] == "del")
+			}
+			else if (this->variable[0] == "del")
 			{
 				ret = "";
-			} else {
+			}
+			else
+			{
 				ret = "Error";
 			}
 		}
@@ -80,11 +87,67 @@ public:
 	};
 };
 
+class ConnectThreadPool
+{
+private:
+	vector<pthread_t> pools;
+
+public:
+	ConnectThreadPool()
+	{
+	}
+
+	static void *worker(void *arg)
+	{
+		Command command;
+		int sock_client = *(int *)arg;
+		while (true)
+		{
+			char *buffer = new char[1024];
+			int length = recv(sock_client, buffer, 1024, 0);
+			removeEnter(buffer);
+			string s = string(buffer);
+			if (s == "quit")
+			{
+				close(sock_client);
+				break;
+			}
+			string res = command.setArgument(s);
+			cout << res << endl;
+			if (res != "")
+			{
+				char send_buffer[res.size() + 2];
+				res.copy(send_buffer, res.size());
+				send_buffer[res.size()] = '\n';
+				send_buffer[res.size() + 1] = '\0';
+				send(sock_client, send_buffer, strlen(send_buffer), 0);
+			}
+		}
+		return (void *)NULL;
+	}
+
+	void newConnect(int sock_client)
+	{
+		pthread_t thread_handler;
+		pthread_create(&thread_handler, NULL, &ConnectThreadPool::worker, &sock_client);
+		//detach release resource when thread completed
+		pthread_detach(thread_handler);
+	}
+};
+
+int sock;
+
+void close_sock(int sig) {
+	if(sock >= 0) {
+		close(sock);
+	}
+	exit(1);
+}
 
 int main(int argc, char **argv)
 {
-	map<string, string> dataset;
-	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	ConnectThreadPool thread_pool;
+	sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock < 0)
 	{
 		/* TODO ソケットが生成されない場合のエラー処理 */
@@ -96,6 +159,9 @@ int main(int argc, char **argv)
 		printf("Usage : \n $> You need input the port number\n");
 		exit(0);
 	}
+
+	signal(SIGINT, close_sock);
+
 	int port = atoi(argv[1]);
 	struct sockaddr_in addr = {
 			0,
@@ -128,31 +194,9 @@ int main(int argc, char **argv)
 
 		if (sock_client == 0 || sock_client < 0)
 		{
-			exit(0);
+			continue;
 		}
-
-		Command command;
-		while (true)
-		{
-			char *buffer = new char[1024];
-			int length = recv(sock_client, buffer, 1024, 0);
-			removeEnter(buffer);
-			string s = string(buffer);
-			if (s == "quit")
-			{
-				close(sock_client);
-				break;
-			}
-			string res = command.setArgument(s);
-			cout << res << endl;
-			if(res != "") {
-				char send_buffer[res.size()+2];
-				res.copy(send_buffer, res.size());
-				send_buffer[res.size()+1] = '\n';
-				send_buffer[res.size()+2] = '\0';
-				send(sock_client, send_buffer, strlen(send_buffer)+2, 0);
-			}
-		}
+		thread_pool.newConnect(sock_client);
 	}
 	return 0;
 }
