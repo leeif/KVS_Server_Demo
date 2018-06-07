@@ -1,18 +1,16 @@
-----
-Feature:
-> 1. TCP server
+## Feature:
+- TCP server
 
-> 2. set, get command
+- Set, Get command
 
-> 3. multi thread for client connection
+- multi thread for client connection
 
 
------
-Todo:
-> 1.memory -> slaballocator
 
-> 2.Thread Pools
+## Todo:
+- memory -> slaballocator
 
-----
-Problem:
-> 1. Parallel Thread max 20 (limited)
+- Thread Pools
+
+## Problem:
+- Parallel Thread max 20 (limited)
