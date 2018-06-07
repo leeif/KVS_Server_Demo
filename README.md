@@ -12,3 +12,7 @@ Todo:
 > 1.memory -> slaballocator
 
 > 2.Thread Pools
+
+----
+Problem:
+> 1. Parallel Thread max 20 (limited)

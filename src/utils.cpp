@@ -30,21 +30,21 @@ vector<string> split(string str, string delim)
 	return items;
 }
 
-void moveFoward(char *array, int removeIndex)
+void moveFoward(string s, int removeIndex)
 {
-	for (int i = removeIndex; i < strlen(array); i++)
+	for (int i = removeIndex; i < s.size(); i++)
 	{
-		array[i] = array[i + 1];
+		s[i] = s[i + 1];
 	}
 }
 
-void removeEnter(char *array)
+void removeEnter(string s)
 {
-	for (int i = 0; i < strlen(array); i++)
+	for (int i = 0; i < s.size(); i++)
 	{
-		if (array[i] == '\n' || array[i] == '\r')
+		if (s[i] == '\n' || s[i] == '\r')
 		{
-			moveFoward(array, i);
+			moveFoward(s, i);
 			i--;
 		}
 	}

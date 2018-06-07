@@ -64,19 +64,23 @@ public:
 		this->isSet = false;
 	};
 
-	string setArgument(string input)
+	string setArgument(vector<string>& input)
 	{
 		if (this->isSet)
 		{
-			return this->execCommand(input);
+			return this->execCommand(input[0]);
 		}
 
-		this->variable = split(input, " ");
+		this->variable = split(input[0], " ");
 
 		if (this->variable[0] == "set" && this->variable.size() == 5)
 		{
 			this->isSet = true;
-			return "";
+			if(input.size() > 1) {
+				return this->execCommand(input[1]);
+			} else {
+				return "";
+			}
 		}
 		if (this->variable[0] == "get" && this->variable.size() == 2)
 		{
@@ -105,14 +109,14 @@ public:
 		{
 			char *buffer = new char[1024];
 			int length = recv(sock_client, buffer, 1024, 0);
-			removeEnter(buffer);
 			string s = string(buffer);
-			if (s == "quit")
+			vector<string> commands = split(s, "\r\n");
+			if (commands[0] == "quit")
 			{
 				close(sock_client);
 				break;
 			}
-			string res = command.setArgument(s);
+			string res = command.setArgument(commands);
 			cout << res << endl;
 			if (res != "")
 			{

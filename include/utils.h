@@ -9,7 +9,7 @@ using namespace std;
 
 vector<string> split(string str, string delim);
 
-void removeEnter(char *array);
+void removeEnter(string s);
 
 
 #endif // UTILS__HEADER
