@@ -13,4 +13,4 @@
 - Thread Pools
 
 ## Problem:
-- Parallel Thread max 20 (limited)
+- 性能低い（19176.428875c/s : 4 threads, 10000 command）（memcachedは49298.962904c/s）
